@@ -32,5 +32,5 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 Demo
-<img width="1106" height="1140" alt="image" src="https://github.com/user-attachments/assets/e9a5480e-efd9-4799-8434-11b2ba456fc4" /> <img width="1114" height="1070" alt="image" src="https://github.com/user-attachments/assets/30ca43bb-6610-4b04-860e-8306e5b06de1" /> ```
+<img width="1106" height="1140" alt="image" src="https://github.com/user-attachments/assets/e9a5480e-efd9-4799-8434-11b2ba456fc4" /> <img width="1114" height="1070" alt="image" src="https://github.com/user-attachments/assets/30ca43bb-6610-4b04-860e-8306e5b06de1" />
 
