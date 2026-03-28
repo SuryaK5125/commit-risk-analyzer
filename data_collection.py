@@ -11,7 +11,7 @@ import requests
 import pandas as pd
 import time
 
-GITHUB_TOKEN = "PLACEHOLDER"
+GITHUB_TOKEN = "GITHUB_TOEN"
 
 HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",
