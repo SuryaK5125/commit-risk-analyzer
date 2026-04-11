@@ -1,57 +1,33 @@
 # Commit Risk Analyzer
-Predicts bug-prone Git commits using machine learning and real GitHub data
+
+Predicts whether a Git commit is likely to introduce bugs using only metadata and message text — no diff analysis, no manual labels.
+
+**Live demo:** https://surya-commit-risk-analyzer.streamlit.app/
 
 ---
 
-## Overview
-- Predicts whether a commit is likely to introduce bugs  
-- Uses:
-  - commit message (NLP)
-  - code changes (additions, deletions)
-  - commit patterns  
+## The approach
 
----
+The hard part was labelling. There's no ground truth dataset of "this commit introduced a bug," so I approximated it: a commit is marked risky if a bug-fix commit appears within the next 3 commits in the repo timeline. Grounded in real activity, but still a proxy.
 
-## Why this project
-- Built using real GitHub API data (not static datasets)  
-- Combines NLP with structured features  
-- Simulates a pre-merge risk analysis tool for developers  
+From there I pulled 3,000+ commits across Flask, Django, and FastAPI via the GitHub REST API, built 220 features (20 structured + 200 TF-IDF from the commit message), and benchmarked four models. Random Forest came out on top — XGBoost had slightly better AUC but worse F1 on the minority class, which is the metric that matters when positive examples are rare.
 
----
-
-## Tech Stack
-- Python, Scikit-learn, XGBoost  
-- TF-IDF (NLP)  
-- Streamlit  
+Final numbers: **0.67 F1, 0.83 ROC-AUC**.
 
 ---
 
 ## Run locally
+
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-The model predicts high risk because:
-- The commit message indicates bug fixing activity
-- The number of changes is relatively high
-- Changes affect multiple files, increasing complexity
 ---
 
-## Demo
-<img width="1106" height="1140" alt="image" src="https://github.com/user-attachments/assets/e9a5480e-efd9-4799-8434-11b2ba456fc4" /> <img width="1114" height="1070" alt="image" src="https://github.com/user-attachments/assets/30ca43bb-6610-4b04-860e-8306e5b06de1" />
----
+## What it can't do
 
-## Why this matters
-
-Predicting risky commits can help:
-- prioritize code reviews
-- reduce bugs in production
-- improve software quality
-
----
-
-## Limitations
-- Labels are heuristic-based (not actual bug data)
-- Model may over-rely on keywords like "fix" or "bug"
-- Does not analyze actual code diffs
+- Doesn't read diffs; everything is metadata and message text
+- Keywords like `fix` or `crash` inflate scores somewhat mechanically
+- Author experience and time-of-day features are hardcoded at inference since the UI doesn't collect them
+- Labels are proxies, not verified bug reports
