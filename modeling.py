@@ -29,8 +29,66 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import hstack, csr_matrix
 from sklearn.metrics import roc_auc_score
 
-df = pd.read_csv("commits_dataset.csv")
-df.head()
+flask_df   = pd.read_csv("commits_dataset_flask.csv")
+django_df  = pd.read_csv("commits_dataset_django.csv")
+fastapi_df = pd.read_csv("commits_dataset_fastapi.csv")
+
+df = pd.concat([flask_df, django_df, fastapi_df], ignore_index=True)
+df = df.drop_duplicates(subset=["sha"]).copy()
+
+print("Combined shape:", df.shape)
+
+df["message_lower"] = df["message"].fillna("").str.lower()
+
+df["delete_ratio"] = df["deletions"] / (df["total_changes"] + 1)
+
+df["change_density"] = df["total_changes"] / (df["files_changed"] + 1)
+
+risk_words = ["fix", "bug", "error", "issue", "crash", "hotfix", "rollback"]
+
+df["risk_word_count"] = df["message_lower"].apply(
+    lambda x: sum(word in x for word in risk_words)
+)
+
+# --- Better label creation using look-ahead bug-fix activity ---
+
+df["message"] = df["message"].fillna("").astype(str)
+df["date"] = pd.to_datetime(df["date"], errors="coerce")
+df = df.dropna(subset=["date"]).copy()
+df = df.sort_values("date").reset_index(drop=True)
+
+bugfix_words = [
+    "fix", "bug", "error", "issue", "patch", "hotfix",
+    "resolve", "resolved", "fixes", "bugfix", "defect"
+]
+
+df["message_lower"] = df["message"].str.lower()
+
+df["is_bugfix_commit"] = df["message_lower"].apply(
+    lambda x: 1 if any(word in x for word in bugfix_words) else 0
+)
+
+N_LOOKAHEAD = 3
+risk_labels = []
+
+for i in range(len(df)):
+    future_window = df.iloc[i+1 : i+1+N_LOOKAHEAD]
+    if future_window["is_bugfix_commit"].sum() > 0:
+        risk_labels.append(1)
+    else:
+        risk_labels.append(0)
+
+df["risk_label"] = risk_labels
+
+# bug-fix commits themselves should usually not be treated as risky source commits
+df.loc[df["is_bugfix_commit"] == 1, "risk_label"] = 0
+
+# replace old label with new one
+df["label"] = df["risk_label"]
+
+print("Final label distribution:")
+print(df["label"].value_counts())
+print(df["label"].value_counts(normalize=True))
 
 print("Shape of dataset:", df.shape)
 print("\nColumns:")
@@ -45,33 +103,34 @@ print("\nLabel distribution (proportion):")
 print(df["label"].value_counts(normalize=True))
 
 features = [
-    "additions",
-    "deletions",
-    "total_changes",
-    "files_changed",
-    "hour",
-    "day_of_week",
-    "message_length",
-    "has_fix_word",
-    "has_urgent_word",
-    "large_commit",
-    "multi_file_commit",
-    "author_experience",
-    "is_new_contributor",
-    "time_since_last_commit",
-    "is_late_night",
-    "change_spike",
-    "core_code_ratio"
+    "additions", "deletions", "total_changes", "files_changed",
+    "hour", "day_of_week", "message_length",
+    "has_fix_word", "has_urgent_word",
+    "large_commit", "multi_file_commit",
+    "author_experience", "is_new_contributor",
+    "time_since_last_commit", "is_late_night",
+    "change_spike", "core_code_ratio","delete_ratio",
+    "change_density",
+    "risk_word_count"
 ]
 
-tfidf = TfidfVectorizer(max_features=100)
+# TEXT FEATURES
+tfidf = TfidfVectorizer(max_features=200)
+print("Number of numeric features:", len(features))
 X_text = tfidf.fit_transform(df["message"])
+print("TFIDF features learned:", len(tfidf.get_feature_names_out()))
 
+# NUMERIC FEATURES
+print("Feature count:", len(features))
+print(features)
 X_numeric = df[features].fillna(0)
 X_numeric_sparse = csr_matrix(X_numeric.values)
 
+# COMBINE
 X = hstack([X_numeric_sparse, X_text])
+
 y = df["label"]
+
 print("Feature matrix shape:", X.shape)
 print("Target shape:", y.shape)
 
@@ -102,6 +161,10 @@ gb_pipeline = Pipeline([
     ("model", GradientBoostingClassifier(random_state=42))
 ])
 
+from sklearn.model_selection import cross_val_score
+
+!pip install xgboost
+
 models = {
     "Logistic Regression": log_reg_pipeline,
     "Random Forest": rf_pipeline,
@@ -115,6 +178,10 @@ xgb_pipeline = Pipeline([
 ])
 
 models["XGBoost"] = xgb_pipeline
+
+for name, model in models.items():
+    cv_scores = cross_val_score(model, X, y, cv=5, scoring="f1")
+    print(f"{name} CV F1: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
 
 for name, model in models.items():
     model.fit(X_train, y_train)
@@ -193,6 +260,10 @@ results_df.to_csv("model_comparison_results.csv", index=False)
 print("Saved model comparison results.")
 
 import joblib
+print("Training feature shape:", X.shape)
+print("TFIDF count:", len(tfidf.get_feature_names_out()))
+print("Best model expected features:",
+      best_model.named_steps["model"].n_features_in_)
 
 joblib.dump(best_model, "best_commit_risk_model.pkl")
 joblib.dump(tfidf, "tfidf_vectorizer.pkl")
@@ -202,3 +273,7 @@ print("Model + TF-IDF saved")
 from google.colab import files
 files.download("best_commit_risk_model.pkl")
 files.download("tfidf_vectorizer.pkl")
+
+print(len(features))
+print(X.shape)
+print(best_model.named_steps["model"].n_features_in_)
