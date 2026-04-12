@@ -19,11 +19,20 @@ Final numbers: **0.67 F1, 0.83 ROC-AUC**.
 ## Run locally
 
 ```bash
+git clone https://github.com/SuryaK5125/commit-risk-analyzer.git
+cd commit-risk-analyzer
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
 ---
+
+## What it can't do
+
+- Doesn't read diffs; everything is metadata and message text
+- Keywords like `fix` or `crash` inflate scores somewhat mechanically
+- Author experience and time-of-day features are hardcoded at inference since the UI doesn't collect them
+- Labels are proxies, not verified bug reports
 
 ## Demo Screenshots
 
@@ -33,9 +42,4 @@ streamlit run app.py
 ### High Risk Example
 ![High Risk Example](Screenshot%20risk%20assessment%202.png)
 
-## What it can't do
-
-- Doesn't read diffs; everything is metadata and message text
-- Keywords like `fix` or `crash` inflate scores somewhat mechanically
-- Author experience and time-of-day features are hardcoded at inference since the UI doesn't collect them
-- Labels are proxies, not verified bug reports
+Built by Surya Kalimuthu
