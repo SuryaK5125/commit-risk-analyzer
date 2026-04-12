@@ -25,6 +25,14 @@ streamlit run app.py
 
 ---
 
+## Demo Screenshots
+
+### Medium Risk Example
+![Medium Risk Example](Screenshot%20risk%20assessment%201.png)
+
+### High Risk Example
+![High Risk Example](Screenshot%20risk%20assessment%202.png)
+
 ## What it can't do
 
 - Doesn't read diffs; everything is metadata and message text
