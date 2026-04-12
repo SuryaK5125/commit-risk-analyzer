@@ -4,4 +4,4 @@ numpy
 scipy
 pandas
 joblib
-xgboost
+xgboost==2.1.1
