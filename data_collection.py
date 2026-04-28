@@ -10,7 +10,9 @@ import requests
 import pandas as pd
 import time
 
-GITHUB_TOKEN = "GITHUB_TOKEN"
+import streamlit as st
+
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 
 HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",
