@@ -106,12 +106,6 @@ for i, c in enumerate(commits):
     print(f"Done {i+1}/{len(commits)}")
     time.sleep(0.2)
 
-file_types = [f["filename"].split(".")[-1] for f in files if "." in f["filename"]]
-
-py_files = sum(1 for f in file_types if f == "py")
-
-core_code_ratio = py_files / len(file_types) if len(file_types) > 0 else 0
-
 df = pd.DataFrame(detailed_commit_data)
 df.head()
 
