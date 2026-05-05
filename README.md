@@ -41,5 +41,6 @@ streamlit run app.py
 
 ### High Risk Example
 ![High Risk Example](Screenshot%20risk%20assessment%202.png)
+add explanation to why it chose a specific risk score
 
 Built by Surya Kalimuthu
