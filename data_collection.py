@@ -55,7 +55,7 @@ print("Total commits collected:", len(commits))
 
 detailed_commit_data = []
 
-# ✅ make sure commits already contains ~300 (from pagination step)
+# ✅ make sure commits already contains ~1000 (from pagination step)
 
 for i, c in enumerate(commits):
     sha = c.get("sha", "")
